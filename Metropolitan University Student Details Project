@@ -1,1 +1,342 @@
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <limits>
+#include <algorithm>
+#include <cctype>
+#include <map>
+using namespace std;
+struct Student
+{
+    string username;
+    string password;
+    string name;
+    string batch;
+    string course;
+    vector<int> marks;
+};
 
+vector<Student> loadStudentsFromFile(const string &filename)
+{
+    vector<Student> students;
+    ifstream file(filename);
+
+    if (file.is_open())
+    {
+        string line;
+        while (getline(file, line))
+        {
+            istringstream iss(line);
+            Student student;
+            iss >> student.username >> student.password >> student.name >> student.batch >> student.course;
+
+            int mark;
+            while (iss >> mark)
+            {
+                student.marks.push_back(mark);
+            }
+
+            students.push_back(student);
+        }
+
+        file.close();
+    }
+
+    return students;
+}
+
+void saveStudentsToFile(const string &filename, const vector<Student> &students)
+{
+    ofstream file(filename);
+
+    if (file.is_open())
+    {
+        for (const auto &student : students)
+        {
+            file << student.username << " " << student.password << " " << student.name << " " << student.batch << " " << student.course;
+
+            for (int mark : student.marks)
+            {
+                file << " " << mark;
+            }
+
+            file << "\n";
+        }
+
+        file.close();
+    }
+}
+
+bool isUsernameTaken(const vector<Student> &students, const string &username)
+{
+    for (const auto &student : students)
+    {
+        if (student.username == username)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+bool isValidUsername(const string &username)
+{
+    return all_of(username.begin(), username.end(), [](char c)
+                  { return isdigit(c) || ispunct(c); });
+}
+
+bool isValidPassword(const string &password)
+{
+    bool hasLetter = false;
+    bool hasDigit = false;
+    bool hasSpecialChar = false;
+
+    for (char c : password)
+    {
+        if (isalpha(c))
+        {
+            hasLetter = true;
+        }
+        else if (isdigit(c))
+        {
+            hasDigit = true;
+        }
+        else if (ispunct(c) || isspace(c))
+        {
+            hasSpecialChar = true;
+        }
+    }
+
+    return password.length() <= 8 && hasLetter && hasDigit && hasSpecialChar;
+}
+
+void registerStudent(vector<Student> &students)
+{
+    string username, password, name, batch, course;
+
+    cout << "\n.......WELCOME TO METROPOLITAN UNIVERSITY.......\n";
+
+    cout << "Enter a user ID (only digits and special characters)\n ";
+    getline(cin, username);
+
+    if (!isValidUsername(username) || isUsernameTaken(students, username))
+    {
+        cout << "Invalid or duplicate username. Please choose another.\n";
+        return;
+    }
+
+    do
+    {
+        cout << "Enter a password(up to 8 characters, mix of letters, digits, and special characters)\n";
+        getline(cin, password);
+
+        if (!isValidPassword(password))
+        {
+            cout << "Invalid password format. Please follow the password requirements.\n";
+        }
+
+    } while (!isValidPassword(password));
+
+    cout << "Enter your name: ";
+    getline(cin, name);
+
+    cout << "Enter your batch: ";
+    getline(cin, batch);
+
+    cout << "Enter your course: ";
+    getline(cin, course);
+
+    students.push_back({username, password, name, batch, course, {}});
+    saveStudentsToFile("university_students.txt", students);
+
+    cout << "Student registration successful! Now you are student in our university.\n";
+}
+
+bool loginStudent(const vector<Student> &students, const string &username, const string &password)
+{
+    for (const auto &student : students)
+    {
+        if (student.username == username && student.password == password)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void viewStudentDetails(const vector<Student> &students, const string &username)
+{
+    for (const auto &student : students)
+    {
+        if (student.username == username)
+        {
+            cout << ".....Student Details...\n";
+            cout << "Name: " << student.name << "\n";
+            cout << "Batch: " << student.batch << "\n";
+            cout << "Course: " << student.course << "\n";
+            return;
+        }
+    }
+
+    cout << "Student not found.\n";
+}
+
+void viewStudentMarks(const vector<Student> &students, const string &username)
+{
+    for (const auto &student : students)
+    {
+        if (student.username == username)
+        {
+            cout << "Student Marks\n";
+            if (student.marks.empty())
+            {
+                cout << "No marks available.\n";
+            }
+            else
+            {
+                cout << "Marks: ";
+                for (int mark : student.marks)
+                {
+                    cout << mark << " ";
+                }
+                cout << "\n";
+            }
+            return;
+        }
+    }
+
+    cout << "Student not found.\n";
+}
+
+void generateAdmissionCard(const vector<Student> &students, const string &username)
+{
+    for (const auto &student : students)
+    {
+        if (student.username == username)
+        {
+            cout << "....Admission Card....\n";
+            cout << "Name: " << student.name << "\n";
+            cout << "Batch: " << student.batch << "\n";
+            cout << "Course: " << student.course << "\n";
+            return;
+        }
+    }
+
+    cout << "Student not found.\n";
+}
+
+void viewCourseOutline(const string &course)
+{
+    map<string, string> courseOutlines = {
+        {"Computer Science", "Introduction to Programming, Data Structures, Algorithms, Database Management"},
+        {"Mathematics", "Calculus, Linear Algebra, Differential Equations, Statistics"},
+        {"English Literature", "World Literature, Poetry, Fiction, Literary Analysis"}};
+
+    auto it = courseOutlines.find(course);
+    if (it != courseOutlines.end())
+    {
+        cout << "Course Outline for " << course << "\n";
+        cout << it->second << "\n";
+    }
+    else
+    {
+        cout << "Course outline not available for " << course << "\n";
+    }
+}
+
+int main()
+{
+    vector<Student> students = loadStudentsFromFile("university_students.txt");
+
+    while (true)
+    {
+        cout << "\n Metropolitan University Student Information \n";
+        cout << "1. Register Student\n";
+        cout << "2. Login\n";
+        cout << "3. View Student Details\n";
+        cout << "4. View Student Marks\n";
+        cout << "5. Generate Admission Card\n";
+        cout << "6. View Course Outline\n";
+        cout << "7. Exit\n";
+        cout << "Enter your choice: ";
+
+        int choice;
+        cin >> choice;
+
+        switch (choice)
+        {
+        case 1:
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            registerStudent(students);
+            break;
+        case 2:
+        {
+            string username, password;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Enter your user ID: ";
+            getline(cin, username);
+            cout << "Enter your password: ";
+            getline(cin, password);
+
+            if (loginStudent(students, username, password))
+            {
+                cout << "Login successful!\n";
+                viewStudentDetails(students, username);
+            }
+            else
+            {
+                cout << "Invalid user ID or password. Please try again.\n";
+            }
+            break;
+        }
+        case 3:
+        {
+            string username;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Enter student user ID to view details: ";
+            getline(cin, username);
+            viewStudentDetails(students, username);
+            break;
+        }
+        case 4:
+        {
+            string username;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Enter student user ID to view marks: ";
+            getline(cin, username);
+            viewStudentMarks(students, username);
+            break;
+        }
+        case 5:
+        {
+            string username;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Enter student user ID to admission card: ";
+            getline(cin, username);
+            generateAdmissionCard(students, username);
+            break;
+        }
+        case 6:
+        {
+            string course;
+            cin.ignore(numeric_limits<streamsize>::max(), '\n');
+            cout << "Enter the course to view the outline: ";
+            getline(cin, course);
+            viewCourseOutline(course);
+            break;
+        }
+        case 7:
+            saveStudentsToFile("university_students.txt", students);
+            cout << "Exiting the program. Goodbye!\n";
+            return 0;
+        default:
+            cout << "Invalid choice. Please enter a valid option.\n";
+        }
+    }
+
+    return 0;
+}
