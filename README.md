@@ -1,2 +1,2 @@
-# Algorithm-Project-Tanoy-Acharjee-222-115-106-
+# Algorithm-Project
 Name : Tanoy Acharjee
